@@ -14,12 +14,36 @@ from adafruit_hid.keyboard import Keyboard
 from adafruit_hid.keycode import Keycode
 from adafruit_hid.consumer_control import ConsumerControl
 from adafruit_hid.consumer_control_code import ConsumerControlCode
-#import adafruit_veml7700
+import adafruit_veml7700
+import supervisor
+
+_TICKS_PERIOD = const(1<<29)
+_TICKS_MAX = const(_TICKS_PERIOD-1)
+_TICKS_HALFPERIOD = const(_TICKS_PERIOD//2)
+
+def ticks_add(ticks, delta):
+#"Add a delta to a base number of ticks, performing wraparound at 2**29ms."
+    return (a + b) % _TICKS_PERIOD
+
+def ticks_diff(ticks1, ticks2):
+#"Compute the signed difference between two ticks values, assuming that they are␣
+#˓→within 2**28 ticks"
+    diff = (ticks1 - ticks2) & _TICKS_MAX
+    diff = ((diff + _TICKS_HALFPERIOD) & _TICKS_MAX) - _TICKS_HALFPERIOD
+    return diff
+
+def ticks_less(ticks1, ticks2):
+#"Return true iff ticks1 is less than ticks2, assuming that they are within␣
+#˓→2**28 ticks"
+    return ticks_diff(ticks1, ticks2) < 0
+
+lastUpdateTime = 0
+currentTime = 0
 
 i2c = busio.I2C(board.GP21, board.GP20)
 
 # Update this to match the number of NeoPixel LEDs connected to your board.
-num_pixels = 10
+num_pixels = 10 #was 10, 12 for encoder lights
 
 brightnessSteps = 50
 pixelBrightness = brightnessSteps/2
@@ -40,10 +64,6 @@ CYAN = (0, 255, 255)
 BLUE = (0, 0, 255)
 PURPLE = (180, 0, 255)
 
-kbd = Keyboard(usb_hid.devices)
-cc = ConsumerControl(usb_hid.devices)
-
-# list of pins to use (skipping GP15 on Pico because it's funky)
 pins = [
     board.GP1,
     board.GP2,
@@ -98,13 +118,14 @@ rightEncoder_last_position = rightEncoder.position
 while not spi.try_lock():
     pass
 
-while not i2c.try_lock():
-    pass
-#veml7700 = adafruit_veml7700.VEML7700(i2c)
+#while not i2c.try_lock():
+    #pass
 
-#print("Ambient light:", veml7700.light)
+veml7700 = adafruit_veml7700.VEML7700(i2c)
 
-trackColor = 1
+print("Ambient light:", veml7700.light)
+
+trackColor = 0
 
 def ledChange():
     global trackColor
@@ -118,33 +139,72 @@ def ledChange():
     elif (trackColor == 3):
         pixels.fill(CYAN)
     elif (trackColor == 4):
-        pixels.fill(BLUE)    
+        pixels.fill(BLUE)
     elif (trackColor == 5):
-        pixels.fill(PURPLE)    
+        pixels.fill(PURPLE)
     else:
         trackColor = 0
         pixels.fill(RED)
 
-ledChange()
 
 spi.configure(baudrate=5000000, phase=0, polarity=0)
 spi.write(bytes([0x00]))
 latch.value = True
 latch.value = False
 time.sleep(1)
-spi.write(bytes([0xF6]))
-latch.value = True
-latch.value = False
+
+#order RGB
+leftEye = [1,0,0]
+rightEye = [0,1,1]
+eyeWriteByte = 0
+
+def eyeUpdate():
+    global leftEye
+    global rightEye
+    global eyeWriteByte
+
+    leftEyeRed = not leftEye[0]
+    leftEyeGreen = not leftEye[1]
+    leftEyeBlue = not leftEye[2]
+
+    rightEyeRed = not rightEye[0]
+    rightEyeGreen = not rightEye[1]
+    rightEyeBlue = not rightEye[2]
+
+    eyeWriteByte = (leftEyeRed << 0) | (leftEyeGreen << 1) | (leftEyeBlue << 2) | (rightEyeRed << 3) | (rightEyeGreen << 4) | (rightEyeBlue << 5)
+    spi.write(bytes([eyeWriteByte]))
+    latch.value = False
+    latch.value = True
+    #print("EyeWrite: ", eyeWriteByte)
+
+ledChange()
+eyeUpdate()
+
+useUSB = False
+
+#if you want to use without USB (for lights and such) your HID calls will hang, pressing right encoder upon bootup disables USB calls to prevent this
+if (not switches[10].value):
+    useUSB = True
+
+if (useUSB == True):
+	kbd = Keyboard(usb_hid.devices)
+	cc = ConsumerControl(usb_hid.devices)
 
 while True:
+
+    ambientLight = veml7700.light
+    #print("Ambient light:", ambientLight)
+
     for button in range(10):
         if switch_state[button] == 0:
             if not switches[button].value:
                 try:
                     if keymap[button][0] == KEY:
-                        kbd.press(*keymap[button][1])
+                        if (useUSB == True):
+                            kbd.press(*keymap[button][1])
                     else:
-                        cc.send(keymap[button][1])
+                        if (useUSB == True):
+                            cc.send(keymap[button][1])
                 except ValueError:  # deals w six key limit
                     pass
                 switch_state[button] = 1
@@ -153,8 +213,8 @@ while True:
             if switches[button].value:
                 try:
                     if keymap[button][0] == KEY:
-                        kbd.release(*keymap[button][1])
-
+                        if (useUSB == True):
+                            kbd.release(*keymap[button][1])
                 except ValueError:
                     pass
                 switch_state[button] = 0
@@ -179,7 +239,7 @@ while True:
         if not switches[button].value:
             try:
                 if keymap[button][0] == KEY:
-                    pass 
+                    pass
                     #kbd.release(*keymap[button][1])
             except ValueError:
                 pass
@@ -191,7 +251,8 @@ while True:
             try:
                 if keymap[button][0] == KEY:
                     pass
-                    cc.send(ConsumerControlCode.PLAY_PAUSE)
+                    if (useUSB == True):
+                        cc.send(ConsumerControlCode.PLAY_PAUSE)
                     #kbd.press(*keymap[button][1])
                 else:
                     pass
@@ -230,12 +291,14 @@ while True:
     position_change = current_position - rightEncoder_last_position
     if position_change > 0:
         for _ in range(position_change):
-            cc.send(ConsumerControlCode.VOLUME_INCREMENT)
+            if (useUSB == True):
+                cc.send(ConsumerControlCode.VOLUME_INCREMENT)
         #print(current_position)
     elif position_change < 0:
         for _ in range(-position_change):
-            cc.send(ConsumerControlCode.VOLUME_DECREMENT)
+            if (useUSB == True):
+                cc.send(ConsumerControlCode.VOLUME_DECREMENT)
         #print(current_position)
     rightEncoder_last_position = current_position
 
-    time.sleep(0.02)  # debounce
+    time.sleep(0.010)  # debounce
