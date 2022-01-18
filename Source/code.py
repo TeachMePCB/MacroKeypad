@@ -17,9 +17,9 @@ from adafruit_hid.consumer_control_code import ConsumerControlCode
 import adafruit_veml7700
 import supervisor
 
-_TICKS_PERIOD = const(1 << 29)
-_TICKS_MAX = const(_TICKS_PERIOD - 1)
-_TICKS_HALFPERIOD = const(_TICKS_PERIOD // 2)
+_TICKS_PERIOD = (1 << 29)
+_TICKS_MAX = (_TICKS_PERIOD - 1)
+_TICKS_HALFPERIOD = (_TICKS_PERIOD // 2)
 
 
 def ticks_add(ticks, delta):
