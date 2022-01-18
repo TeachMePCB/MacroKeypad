@@ -138,41 +138,41 @@ latch.value = True
 latch.value = False
 time.sleep(1)
 
-# order RGB
-leftEye = [1, 0, 0]
-rightEye = [0, 1, 1]
-eyeWriteByte = 0
 
+def eye_update(left_eye, right_eye):
+    """
 
-def eyeUpdate():
-    global leftEye
-    global rightEye
-    global eyeWriteByte
+    :param left_eye:
+    :param right_eye:
+    :param eye_write_byte:
+    :return:
+    """
+    left_eye_red = not left_eye[0]
+    left_eye_green = not left_eye[1]
+    left_eye_blue = not left_eye[2]
 
-    leftEyeRed = not leftEye[0]
-    leftEyeGreen = not leftEye[1]
-    leftEyeBlue = not leftEye[2]
+    right_eye_red = not right_eye[0]
+    right_eye_green = not right_eye[1]
+    right_eye_blue = not right_eye[2]
 
-    rightEyeRed = not rightEye[0]
-    rightEyeGreen = not rightEye[1]
-    rightEyeBlue = not rightEye[2]
-
-    eyeWriteByte = (
-        (leftEyeRed << 0)
-        | (leftEyeGreen << 1)
-        | (leftEyeBlue << 2)
-        | (rightEyeRed << 3)
-        | (rightEyeGreen << 4)
-        | (rightEyeBlue << 5)
+    eye_write_byte = (
+            (left_eye_red << 0)
+            | (left_eye_green << 1)
+            | (left_eye_blue << 2)
+            | (right_eye_red << 3)
+            | (right_eye_green << 4)
+            | (right_eye_blue << 5)
     )
-    spi.write(bytes([eyeWriteByte]))
+    spi.write(bytes([eye_write_byte]))
     latch.value = False
     latch.value = True
+    return eye_write_byte
     # print("EyeWrite: ", eyeWriteByte)
 
 
 ledChange()
-eyeUpdate()
+# order RGB
+eye_update(left_eye=[1, 0, 0], right_eye=[0, 1, 1])
 
 useUSB = False
 
