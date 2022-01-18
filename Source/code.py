@@ -173,14 +173,14 @@ led_color = led_change(0)  # Initialize led color
 # order RGB
 eye_update(left_eye=[1, 0, 0], right_eye=[0, 1, 1])
 
-useUSB = False
+use_USB = False
 
 # if you want to use without USB (for lights and such) your HID calls will hang,
 # pressing right encoder upon bootup disables USB calls to prevent this
 if not switches[10].value:
-    useUSB = True
+    use_USB = True
 
-if useUSB:
+if use_USB:
     kbd = Keyboard(usb_hid.devices)
     cc = ConsumerControl(usb_hid.devices)
 
@@ -194,10 +194,10 @@ while True:
             if not switches[button].value:
                 try:
                     if keymap[button][0] == KEY:
-                        if useUSB:
+                        if use_USB:
                             kbd.press(*keymap[button][1])
                     else:
-                        if useUSB:
+                        if use_USB:
                             cc.send(keymap[button][1])
                 except ValueError:  # deals w six key limit
                     pass
@@ -207,7 +207,7 @@ while True:
             if switches[button].value:
                 try:
                     if keymap[button][0] == KEY:
-                        if useUSB:
+                        if use_USB:
                             kbd.release(*keymap[button][1])
                 except ValueError:
                     pass
@@ -242,7 +242,7 @@ while True:
         if switches[button].value:
             try:
                 if keymap[button][0] == KEY:
-                    if useUSB:
+                    if use_USB:
                         cc.send(ConsumerControlCode.PLAY_PAUSE)
                     # kbd.press(*keymap[button][1])
                 else:
@@ -282,12 +282,12 @@ while True:
     position_change = current_position - rightEncoder_last_position
     if position_change > 0:
         for _ in range(position_change):
-            if useUSB:
+            if use_USB:
                 cc.send(ConsumerControlCode.VOLUME_INCREMENT)
         # print(current_position)
     elif position_change < 0:
         for _ in range(-position_change):
-            if useUSB:
+            if use_USB:
                 cc.send(ConsumerControlCode.VOLUME_DECREMENT)
         # print(current_position)
     rightEncoder_last_position = current_position
