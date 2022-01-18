@@ -106,27 +106,29 @@ veml7700 = adafruit_veml7700.VEML7700(i2c)
 
 print("Ambient light:", veml7700.light)
 
-trackColor = 0
 
+def led_change(current_color):
+    """
 
-def ledChange():
-    global trackColor
-
-    if trackColor == 0:
+    :param current_color:
+    :return:
+    """
+    if current_color == 0:
         pixels.fill(RED)
-    elif trackColor == 1:
+    elif current_color == 1:
         pixels.fill(YELLOW)
-    elif trackColor == 2:
+    elif current_color == 2:
         pixels.fill(GREEN)
-    elif trackColor == 3:
+    elif current_color == 3:
         pixels.fill(CYAN)
-    elif trackColor == 4:
+    elif current_color == 4:
         pixels.fill(BLUE)
-    elif trackColor == 5:
+    elif current_color == 5:
         pixels.fill(PURPLE)
-    else:
-        trackColor = 0
+    else:  # wrap around to zero/red
+        current_color = 0
         pixels.fill(RED)
+    return current_color
 
 
 spi.configure(baudrate=5000000, phase=0, polarity=0)
@@ -167,7 +169,7 @@ def eye_update(left_eye, right_eye):
     # print("EyeWrite: ", eyeWriteByte)
 
 
-ledChange()
+led_color = led_change(0)  # Initialize led color
 # order RGB
 eye_update(left_eye=[1, 0, 0], right_eye=[0, 1, 1])
 
@@ -215,9 +217,7 @@ while True:
         if switches[button].value:
             try:
                 if keymap[button][0] == KEY:
-                    pass
-                    trackColor = trackColor + 1
-                    ledChange()
+                    led_color = led_change(led_color+1)
                     # kbd.press(*keymap[button][1])
                 else:
                     pass
