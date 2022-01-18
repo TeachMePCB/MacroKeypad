@@ -1,6 +1,12 @@
-# TeachMe PCB Rev 2 Class
-# Bring up hardware, skull keypad - Jesse Robinson
-# 11/8/2021
+# SPDX-FileCopyrightText: Copyright (c) 2021-2022 Jesse Robinson
+#
+# SPDX-License-Identifier: MIT
+
+"""
+TeachMe PCB Rev 2 Class
+Description: Bring up hardware, skull keypad - Jesse Robinson
+Rev: 11/8/2021
+"""
 
 import time
 import busio
