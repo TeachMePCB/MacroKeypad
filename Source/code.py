@@ -24,7 +24,7 @@ _TICKS_HALFPERIOD = const(_TICKS_PERIOD // 2)
 
 def ticks_add(ticks, delta):
     # "Add a delta to a base number of ticks, performing wraparound at 2**29ms."
-    return (a + b) % _TICKS_PERIOD
+    return (ticks + delta) % _TICKS_PERIOD
 
 
 def ticks_diff(ticks1, ticks2):
