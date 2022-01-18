@@ -22,9 +22,6 @@ from adafruit_hid.consumer_control import ConsumerControl
 from adafruit_hid.consumer_control_code import ConsumerControlCode
 import adafruit_veml7700
 
-lastUpdateTime = 0
-currentTime = 0
-
 i2c = busio.I2C(board.GP21, board.GP20)
 
 # Update this to match the number of NeoPixel LEDs connected to your board.
