@@ -25,13 +25,13 @@ import adafruit_veml7700
 i2c = busio.I2C(board.GP21, board.GP20)
 
 # Update this to match the number of NeoPixel LEDs connected to your board.
-num_pixels = 10  # was 10, 12 for encoder lights
+NUM_PIXELS = 10  # was 10, 12 for encoder lights
 
-brightnessSteps = 50
-pixelBrightness = brightnessSteps / 2
+BRIGHTNESS_STEPS = 50
+pixel_brightness = BRIGHTNESS_STEPS / 2
 
-pixels = neopixel.NeoPixel(board.GP19, num_pixels)
-pixels.brightness = float(pixelBrightness) / brightnessSteps
+pixels = neopixel.NeoPixel(board.GP19, NUM_PIXELS)
+pixels.brightness = float(pixel_brightness) / BRIGHTNESS_STEPS
 
 spi = busio.SPI(clock=board.GP26, MOSI=board.GP27)
 latch = digitalio.DigitalInOut(board.GP28)
@@ -175,11 +175,12 @@ eye_update(left_eye=[1, 0, 0], right_eye=[0, 1, 1])
 
 useUSB = False
 
-# if you want to use without USB (for lights and such) your HID calls will hang, pressing right encoder upon bootup disables USB calls to prevent this
+# if you want to use without USB (for lights and such) your HID calls will hang,
+# pressing right encoder upon bootup disables USB calls to prevent this
 if not switches[10].value:
     useUSB = True
 
-if useUSB == True:
+if useUSB:
     kbd = Keyboard(usb_hid.devices)
     cc = ConsumerControl(usb_hid.devices)
 
@@ -193,10 +194,10 @@ while True:
             if not switches[button].value:
                 try:
                     if keymap[button][0] == KEY:
-                        if useUSB == True:
+                        if useUSB:
                             kbd.press(*keymap[button][1])
                     else:
-                        if useUSB == True:
+                        if useUSB:
                             cc.send(keymap[button][1])
                 except ValueError:  # deals w six key limit
                     pass
@@ -206,7 +207,7 @@ while True:
             if switches[button].value:
                 try:
                     if keymap[button][0] == KEY:
-                        if useUSB == True:
+                        if useUSB:
                             kbd.release(*keymap[button][1])
                 except ValueError:
                     pass
@@ -241,8 +242,7 @@ while True:
         if switches[button].value:
             try:
                 if keymap[button][0] == KEY:
-                    pass
-                    if useUSB == True:
+                    if useUSB:
                         cc.send(ConsumerControlCode.PLAY_PAUSE)
                     # kbd.press(*keymap[button][1])
                 else:
@@ -266,28 +266,28 @@ while True:
     position_change = current_position - leftEncoder_last_position
     if position_change > 0:
         for _ in range(position_change):
-            if pixelBrightness < brightnessSteps:
-                pixelBrightness = pixelBrightness + 1
+            if pixel_brightness < BRIGHTNESS_STEPS:
+                pixel_brightness = pixel_brightness + 1
         # print(pixelBrightness)
-        pixels.brightness = float(pixelBrightness) / brightnessSteps
+        pixels.brightness = float(pixel_brightness) / BRIGHTNESS_STEPS
     elif position_change < 0:
         for _ in range(-position_change):
-            if pixelBrightness > 0:
-                pixelBrightness = pixelBrightness - 1
+            if pixel_brightness > 0:
+                pixel_brightness = pixel_brightness - 1
         # print(pixelBrightness)
-        pixels.brightness = float(pixelBrightness) / brightnessSteps
+        pixels.brightness = float(pixel_brightness) / BRIGHTNESS_STEPS
     leftEncoder_last_position = current_position
 
     current_position = rightEncoder.position
     position_change = current_position - rightEncoder_last_position
     if position_change > 0:
         for _ in range(position_change):
-            if useUSB == True:
+            if useUSB:
                 cc.send(ConsumerControlCode.VOLUME_INCREMENT)
         # print(current_position)
     elif position_change < 0:
         for _ in range(-position_change):
-            if useUSB == True:
+            if useUSB:
                 cc.send(ConsumerControlCode.VOLUME_DECREMENT)
         # print(current_position)
     rightEncoder_last_position = current_position
